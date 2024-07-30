@@ -1,26 +1,56 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const products = document.querySelectorAll('.product');
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const addToCartButtons = document.querySelectorAll('.add-to-cart');
+    const cartCountElement = document.getElementById('cart-count');
+    const loginLogoutButton = document.getElementById('login-logout-button');
+    let cart = JSON.parse(sessionStorage.getItem('cart')) || [];
+    let isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
 
-    function saveCart() {
-        localStorage.setItem('cart', JSON.stringify(cart));
+    function updateCartCount() {
+        const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+        cartCountElement.textContent = totalQuantity;
+    }
+
+    function updateLoginLogoutButton() {
+        if (isLoggedIn) {
+            loginLogoutButton.textContent = 'Logout';
+            loginLogoutButton.href = '#';
+            loginLogoutButton.addEventListener('click', logout);
+        } else {
+            loginLogoutButton.textContent = 'Login';
+            loginLogoutButton.href = 'login.html';
+            loginLogoutButton.removeEventListener('click', logout);
+        }
     }
 
     function addToCart(productId) {
-        const existingProduct = cart.find(item => item.id === productId);
-        if (existingProduct) {
-            existingProduct.quantity++;
+        const product = cart.find(item => item.id === productId);
+        if (product) {
+            product.quantity++;
         } else {
             cart.push({ id: productId, quantity: 1 });
         }
-        saveCart();
+        sessionStorage.setItem('cart', JSON.stringify(cart));
+        updateCartCount();
     }
 
-    products.forEach(product => {
-        product.querySelector('.add-to-cart').addEventListener('click', () => {
-            const productId = parseInt(product.getAttribute('data-id'));
+    function logout(event) {
+        event.preventDefault();
+        sessionStorage.removeItem('isLoggedIn');
+        isLoggedIn = false;
+        updateLoginLogoutButton();
+    }
+
+    addToCartButtons.forEach(button => {
+        button.addEventListener('click', (event) => {
+            if (!isLoggedIn) {
+                window.location.href = 'login.html';
+                return;
+            }
+            const productId = parseInt(event.target.parentElement.getAttribute('data-id'));
             addToCart(productId);
-            window.location.href = 'cart.html'; // Navigate to cart page
         });
     });
+
+    updateCartCount();
+    updateLoginLogoutButton();
 });
